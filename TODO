@@ -1,0 +1,13 @@
+Setup:
+    ☐ Figure out how to make something work with Python-chess
+        ☐ Representing a board state
+        ☐ Represent a move
+        ☐ Get all the possible moves
+        ☐ How to represent a game
+        
+    
+Engine:
+    ☐ Implement an heuristic evaluation function for the board state
+    ☐ Implement base minimax
+    ☐ Implement alpha-beta pruning
+    ☐ Openings?
