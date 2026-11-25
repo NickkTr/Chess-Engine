@@ -1,13 +1,22 @@
 Setup:
-    ☐ Figure out how to make something work with Python-chess
-        ☐ Representing a board state
-        ☐ Represent a move
-        ☐ Get all the possible moves
-        ☐ How to represent a game
+    ✔ Figure out how to make something work with Python-chess @done(26-11-25 17:23)
+        ✔ Representing a board state @done(26-11-25 17:23)
+        ✔ Represent a move @done(26-11-25 17:23)
+        ✔ Get all the possible moves @done(26-11-25 17:23)
+        ✔ How to represent a game @done(26-11-25 17:23)
         
     
-Engine:
-    ☐ Implement an heuristic evaluation function for the board state
-    ☐ Implement base minimax
-    ☐ Implement alpha-beta pruning
-    ☐ Openings?
+Base Engine:
+    ✔ Implement an heuristic evaluation function for the board state @done(26-11-25 17:23)
+    ✔ Implement base minimax @done(26-11-25 17:23)
+    ✔ Implement alpha-beta pruning @done(26-11-25 17:23)
+    
+
+Game experience:
+    ☐ Run the minimax algorithm on a separate thread so that it doesn't completely block the UI while it is loading
+    ☐ Allow the human to play as black
+
+
+Refinements:
+    ☐ Improve the heuristic evaluation function with information about positioning
+    ☐ Include openings

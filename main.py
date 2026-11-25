@@ -2,6 +2,7 @@ import pygame
 import chess
 import sys
 from board_ui import BoardUI
+from engine import find_best_move
 
 def load_resources(scr_size: tuple[int,int]):
     scr_w, _ = scr_size
@@ -57,7 +58,8 @@ def main():
     board_background = pygame.transform.scale(board_background, scr_size)
 
     board = chess.Board()
-    board_ui = BoardUI(board, pieces_textures, W, H)
+    board_ui = BoardUI(board, pieces_textures, W, H, black_is_player=False)
+
 
     while True:
 
@@ -77,11 +79,14 @@ def main():
                 board_ui.on_mouse_button_up(mouse_x, mouse_y, event.button)
 
                 
-
         surf.blit(board_background, (0,0))
         board_ui.render(surf)
 
-        # surf.blit(pieces_textures[chess.WHITE][chess.KING], (300,300))
+        if board.turn == chess.BLACK:
+            best_move = find_best_move(board, 3)
+
+            if best_move != None:
+                board.push(best_move)
 
         win.blit(surf, (0,0))
         pygame.display.flip()

@@ -13,4 +13,11 @@ def get_board_square(board_x: int, board_y: int) -> chess.Square:
     square = chess.parse_square(row_letter + str(board_y + 1))
 
     return square
-    
+
+
+
+def get_square_coords(square_num: chess.Square) -> tuple[int, int]:
+    """ Given a chess square, this function returns its coordinates """
+    x_coord = square_num % 8
+    y_coord = square_num // 8
+    return x_coord, y_coord
