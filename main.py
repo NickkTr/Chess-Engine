@@ -3,6 +3,7 @@ import chess
 import sys
 from board_ui import BoardUI
 from engine import find_best_move
+from concurrent.futures import Future, ThreadPoolExecutor
 
 def load_resources(scr_size: tuple[int,int]):
     scr_w, _ = scr_size
@@ -60,36 +61,61 @@ def main():
     board = chess.Board()
     board_ui = BoardUI(board, pieces_textures, W, H, black_is_player=False)
 
+    executor = ThreadPoolExecutor(max_workers=1)
+    AI_COLOR = chess.BLACK
+    ai_future: Future | None = None
+
+    should_render = True
+    
+    clock = pygame.time.Clock()
 
     while True:
 
         for event in pygame.event.get():
+
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
 
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_x, mouse_y = event.pos
-                # button = event.button
                 board_ui.on_mouse_button_down(mouse_x, mouse_y, event.button)
+                should_render = True
 
             elif event.type == pygame.MOUSEBUTTONUP:
                 mouse_x, mouse_y = event.pos
-                # button = event.button
                 board_ui.on_mouse_button_up(mouse_x, mouse_y, event.button)
+                should_render = True
 
-                
+            elif event.type == pygame.MOUSEMOTION and board_ui.dragging:
+                should_render = True
+
+
+        # Get the move if the AI thread is done calculating it
+        if not board.is_game_over() and board.turn == AI_COLOR:
+            if ai_future is None:
+                ai_future = executor.submit(find_best_move, board.copy(), depth=4)
+
+            elif ai_future.done():
+                best_move = ai_future.result()
+                if best_move is not None:
+                    board.push(best_move)
+                    should_render = True
+
+                ai_future = None
+
+        if not should_render:
+            continue
+        
         surf.blit(board_background, (0,0))
         board_ui.render(surf)
 
-        if board.turn == chess.BLACK:
-            best_move = find_best_move(board, 3)
 
-            if best_move != None:
-                board.push(best_move)
 
         win.blit(surf, (0,0))
         pygame.display.flip()
+        should_render = False
+        clock.tick(60)
 
 
 
