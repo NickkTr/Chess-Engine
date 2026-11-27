@@ -1,4 +1,5 @@
 import chess
+import chess.polyglot
 
 PIECE_VALUES = {
     chess.PAWN: 1,
@@ -19,6 +20,18 @@ MOBILITY_SCORES = {
 
 MATE_SCORE = 1e5
 
+BOOK_PATH = "openings/baron30.bin"
+
+
+def get_book_move(board: chess.Board, book_path: str = BOOK_PATH) -> chess.Move | None:
+    try:
+        with chess.polyglot.open_reader(book_path) as reader:
+            # Picks a move probabilistically based on its book weight (frequency/winrate)
+            entry = reader.weighted_choice(board)
+            return entry.move
+    except (IndexError, FileNotFoundError):
+        # IndexError means the current position is not in the book (out of theory)
+        return None
 
 
 def _side_activity_and_hanging_score(board: chess.Board, side: chess.Color) -> int:
@@ -87,6 +100,11 @@ def evaluate_board_position(board: chess.Board, positive_side: chess.Color, curr
 
 
 def find_best_move(board: chess.Board, depth: int) -> chess.Move|None:
+    book_move = get_book_move(board)
+    if book_move is not None:
+        print("Responded with book move")
+        return book_move
+
     computer_side = board.turn
     best_move = next(iter(board.legal_moves), None)
     best_score = -float('inf')
