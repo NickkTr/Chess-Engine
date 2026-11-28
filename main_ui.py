@@ -2,7 +2,7 @@ import pygame
 import chess
 import sys
 from board_ui import BoardUI
-from engine import find_best_move
+from engine import find_best_move, load_engine_settings
 from concurrent.futures import Future, ProcessPoolExecutor
 
 def load_resources(scr_size: tuple[int,int]):
@@ -43,13 +43,12 @@ def load_resources(scr_size: tuple[int,int]):
 
 
 
-
-
 def main():
     W,H = 600, 600
     scr_size = (W,H)
 
     pieces_textures = load_resources(scr_size)
+    engine_settings = load_engine_settings()
 
     pygame.init()
     win = pygame.display.set_mode(scr_size)
@@ -94,7 +93,7 @@ def main():
         # Get the move if the AI thread is done calculating it
         if not board.is_game_over() and board.turn == AI_COLOR:
             if ai_future is None:
-                ai_future = executor.submit(find_best_move, board.copy(), depth=4)
+                ai_future = executor.submit(find_best_move, board.copy(), depth=4, settings=engine_settings)
 
             elif ai_future.done():
                 best_move = ai_future.result()
@@ -109,7 +108,6 @@ def main():
         
         surf.blit(board_background, (0,0))
         board_ui.render(surf)
-
 
 
         win.blit(surf, (0,0))

@@ -1,4 +1,5 @@
 import chess
+import numpy as np
 
 def get_board_square(board_x: int, board_y: int) -> chess.Square:
     """
@@ -21,3 +22,10 @@ def get_square_coords(square_num: chess.Square) -> tuple[int, int]:
     x_coord = square_num % 8
     y_coord = square_num // 8
     return x_coord, y_coord
+
+
+def softmax(x: np.ndarray, beta: float = 1.0) -> np.ndarray:
+    max_logit = np.max(x)
+    normalized_logits = x - max_logit
+    z = np.exp(beta * normalized_logits)
+    return z / np.sum(z)

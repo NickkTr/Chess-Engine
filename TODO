@@ -12,7 +12,7 @@ Base Engine:
     ✔ Implement alpha-beta pruning @done(26-11-25 17:23)
     
 
-Game experience:
+Game experience on my own crappy UI:
     ✔ Run the minimax algorithm on a separate thread so that it doesn't completely block the UI while it is loading @done(26-11-28 15:23)
     ✔ Integrate with Universal Chess Interface to make sure one can play comfortably without my crappy UI @done(26-11-28 15:24)
     ☐ Allow the human to play as black
@@ -22,6 +22,6 @@ Refinements:
     ✔ Improve the heuristic evaluation function with information about positioning @done(26-11-28 15:24)
     ✔ Include openings @done(26-11-28 15:24)
     ☐ Include Piece Square Tables
-    ☐ Implement stochastic move selection. 
+    ✔ Implement stochastic move selection. @done(26-11-28 18:41)
         -> Ex: pick top k moves, remove those whose estimated value is below a certain threshold (ex: % of the score of the top move), run softmax and use the resulting moves logits to choose the move probabilistically
-    ☐ Make a settings json where one can load settings 
+    ✔ Make a settings json where one can load settings @done(26-11-28 18:41)

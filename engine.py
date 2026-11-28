@@ -1,5 +1,10 @@
 import chess
 import chess.polyglot
+import numpy as np
+from utils import softmax
+import json
+import os
+import sys
 
 PIECE_VALUES = {
     chess.PAWN: 1,
@@ -21,6 +26,38 @@ MOBILITY_SCORES = {
 MATE_SCORE = 1e5
 
 BOOK_PATH = "openings/baron30.bin"
+
+DEFAULT_SETTINGS = {
+    'non_deterministic_moves': False,
+    'temperature_beta': 2.0,
+    'score_margin': 0.25,
+    'verbose': True
+}
+
+
+BASE_DIR = (
+    os.path.dirname(sys.executable)
+    if getattr(sys, "frozen", False)
+    else os.path.dirname(os.path.abspath(__file__))
+)
+
+CONFIG_PATH = os.path.join(BASE_DIR, "settings.json")
+
+
+def load_engine_settings():
+    if os.path.exists(CONFIG_PATH):
+        with open(CONFIG_PATH, 'r') as fp:
+            settings = json.load(fp)
+    else:
+        settings = {}
+        print("info string Settings file not found, using defaults instead")
+
+    # set default values if they aren't present in the array
+    for key, value in DEFAULT_SETTINGS.items():
+        settings.setdefault(key, value)
+
+    return settings
+
 
 
 def get_book_move(board: chess.Board, book_path: str = BOOK_PATH) -> chess.Move | None:
@@ -115,27 +152,65 @@ def mvv_lva_score(board: chess.Board, move: chess.Move):
     return move_score
 
 
-def find_best_move(board: chess.Board, depth: int) -> chess.Move|None:
+def find_best_move(
+    board: chess.Board, 
+    depth: int,
+    settings: dict = DEFAULT_SETTINGS,
+) -> chess.Move|None:
     book_move = get_book_move(board)
     if book_move is not None:
-        print("info string Responded with book move", flush=True)   
+        if settings['verbose']:
+            print("info string Responded with book move", flush=True)   
         return book_move
+
+    # if we always want to pick the best move, we need to remove the relaxation on alpha beta pruning
+    score_margin = settings['score_margin'] if settings['non_deterministic_moves'] else 0
 
     computer_side = board.turn
     legal_moves = sorted(board.legal_moves, key=lambda move: mvv_lva_score(board, move), reverse=True)
     best_move = None
     best_score = -float('inf')
 
-    for move in legal_moves:
+    moves = list(legal_moves)
+    move_scores = np.full((len(moves),), -np.inf, dtype=np.float32)
+
+    for idx, move in enumerate(legal_moves):
         board.push(move)
-        eval_score = minimax(board, depth-1, computer_side, alpha = best_score)
+        eval_score = minimax(board, depth-1, computer_side, alpha = best_score - score_margin)
         board.pop()
 
-        if eval_score > best_score:
-            best_move = move
-            best_score = eval_score
+        move_scores[idx] = eval_score
 
-    return best_move
+        if eval_score > best_score:
+            best_score = eval_score
+            best_move = move
+
+    # skip the move selections step if the settings always require the best move 
+    if not settings['non_deterministic_moves']:
+        return best_move
+
+    # last indices correspond to the top moves
+    threshold = best_score - score_margin if np.isfinite(best_score) else -np.inf
+    kept_mask = move_scores >= threshold
+
+    kept_moves = [move for move, keep in zip(moves, kept_mask) if keep]
+    kept_scores = move_scores[kept_mask]
+
+    probs = softmax(kept_scores, beta=settings['temperature_beta'])
+    selected_idx = int(np.random.choice(len(kept_moves), p=probs))
+    selected_move = kept_moves[selected_idx]
+
+    if settings['verbose']:
+        print(
+            f"info string kept: {len(kept_moves)}\n"
+            f"info string scores: {np.round(kept_scores, 2)}\n"
+            f"info string probs: {np.round(probs, 2)}\n",
+            f"info string picked best move: {kept_scores[selected_idx] == best_score}\n",
+            flush=True,
+        )
+
+    return selected_move
+
 
 
 

@@ -1,0 +1,6 @@
+{
+    "non_deterministic_moves": true,
+    "temperature_beta": 7.0,
+    "score_margin": 0.1,
+    "verbose": true
+}   
