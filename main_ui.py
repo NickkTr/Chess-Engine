@@ -3,7 +3,7 @@ import chess
 import sys
 from board_ui import BoardUI
 from engine import find_best_move
-from concurrent.futures import Future, ThreadPoolExecutor
+from concurrent.futures import Future, ProcessPoolExecutor
 
 def load_resources(scr_size: tuple[int,int]):
     scr_w, _ = scr_size
@@ -61,7 +61,7 @@ def main():
     board = chess.Board()
     board_ui = BoardUI(board, pieces_textures, W, H, black_is_player=False)
 
-    executor = ThreadPoolExecutor(max_workers=1)
+    executor = ProcessPoolExecutor(max_workers=1)
     AI_COLOR = chess.BLACK
     ai_future: Future | None = None
 

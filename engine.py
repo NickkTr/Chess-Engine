@@ -7,7 +7,7 @@ PIECE_VALUES = {
     chess.BISHOP: 3.3,
     chess.ROOK: 5,
     chess.QUEEN: 9,
-    chess.KING: 0
+    chess.KING: 10,
 }
 
 
@@ -26,12 +26,13 @@ BOOK_PATH = "openings/baron30.bin"
 def get_book_move(board: chess.Board, book_path: str = BOOK_PATH) -> chess.Move | None:
     try:
         with chess.polyglot.open_reader(book_path) as reader:
-            # Picks a move probabilistically based on its book weight (frequency/winrate)
+            # picks a move probabilistically based on its book weight (frequency/winrate)
             entry = reader.weighted_choice(board)
             return entry.move
     except (IndexError, FileNotFoundError):
         # IndexError means the current position is not in the book (out of theory)
         return None
+
 
 
 def _side_activity_and_hanging_score(board: chess.Board, side: chess.Color) -> int:
@@ -98,18 +99,34 @@ def evaluate_board_position(board: chess.Board, positive_side: chess.Color, curr
     return score
 
 
+# most valuable victim, least valuable attacker based sorting of the moves
+def mvv_lva_score(board: chess.Board, move: chess.Move):
+    move_score = 0
+
+    if board.is_capture(move):
+        attacker_type = board.piece_at(move.from_square).piece_type
+        victim_type = board.piece_at(move.to_square).piece_type if not board.is_en_passant(move) else chess.PAWN
+
+        move_score += 10 * PIECE_VALUES[victim_type] - PIECE_VALUES[attacker_type]
+
+    if move.promotion is not None:
+        move_score += PIECE_VALUES[move.promotion]
+
+    return move_score
+
 
 def find_best_move(board: chess.Board, depth: int) -> chess.Move|None:
     book_move = get_book_move(board)
     if book_move is not None:
-        print("Responded with book move")
+        print("info string Responded with book move", flush=True)   
         return book_move
 
     computer_side = board.turn
-    best_move = next(iter(board.legal_moves), None)
+    legal_moves = sorted(board.legal_moves, key=lambda move: mvv_lva_score(board, move), reverse=True)
+    best_move = None
     best_score = -float('inf')
 
-    for move in board.legal_moves:
+    for move in legal_moves:
         board.push(move)
         eval_score = minimax(board, depth-1, computer_side, alpha = best_score)
         board.pop()
@@ -131,6 +148,10 @@ def minimax(
     alpha: float = -float('inf'),
     beta: float = float('inf')
 ) -> float:  
+
+    if board.is_repetition(2):
+        return 0
+    
     if depth == 0 or board.is_game_over():
         # we always reurn the heuristic evaluation from the computer's POV.
         return evaluate_board_position(board, computer_side, curr_search_depth=depth)
@@ -141,8 +162,9 @@ def minimax(
     # computer's turn: we try to maximize the score
     if is_maximizing_side:
         maxEval = -float('inf')
+        legal_moves = board.legal_moves if depth == 1 else sorted(board.legal_moves, key=lambda move: mvv_lva_score(board, move), reverse=True)
 
-        for move in board.legal_moves:
+        for move in legal_moves:
             board.push(move)
             eval = minimax(board, depth-1, computer_side, alpha, beta)
             board.pop()
